@@ -1,0 +1,65 @@
+CHIP ALU {
+    IN  
+        x[16], y[16],
+        zx, nx,
+        zy, ny,
+        f,
+        no;
+    OUT 
+        out[16],
+        zr,
+        ng;
+
+    PARTS:
+    // ver si x es 0
+    Mux16(
+        a=x,
+        b[0]=false, b[1]=false, b[2]=false, b[3]=false,
+        b[4]=false, b[5]=false, b[6]=false, b[7]=false,
+        b[8]=false, b[9]=false, b[10]=false, b[11]=false,
+        b[12]=false, b[13]=false, b[14]=false, b[15]=false,
+        sel=zx,
+        out=x0
+    );
+
+    // x negativ
+    Not16(in=x0, out=nx0);
+    Mux16(a=x0, b=nx0, sel=nx, out=x1);
+
+    // y cero
+    Mux16(
+        a=y,
+        b[0]=false, b[1]=false, b[2]=false, b[3]=false,
+        b[4]=false, b[5]=false, b[6]=false, b[7]=false,
+        b[8]=false, b[9]=false, b[10]=false, b[11]=false,
+        b[12]=false, b[13]=false, b[14]=false, b[15]=false,
+        sel=zy,
+        out=y0
+    );
+
+    // y negativo
+    Not16(in=y0, out=ny0);
+    Mux16(a=y0, b=ny0, sel=ny, out=y1);
+
+    //  AND or ADD
+    And16(a=x1, b=y1, out=andOut);
+    Add16(a=x1, b=y1, out=addOut);
+    Mux16(a=andOut, b=addOut, sel=f, out=fOut);
+
+    // SALIDA FINAL 
+    Not16(in=fOut, out=nfOut);
+    Mux16(a=fOut, b=nfOut, sel=no, out=out);
+
+    // ng = out[15]
+    And(a=out[15], b=true, out=ng);
+
+    // zr 
+    Or8Way(in[0]=out[0], in[1]=out[1], in[2]=out[2], in[3]=out[3],
+           in[4]=out[4], in[5]=out[5], in[6]=out[6], in[7]=out[7], out=orLow);
+
+    Or8Way(in[0]=out[8], in[1]=out[9], in[2]=out[10], in[3]=out[11],
+           in[4]=out[12], in[5]=out[13], in[6]=out[14], in[7]=out[15], out=orHigh);
+
+    Or(a=orLow, b=orHigh, out=orAll);
+    Not(in=orAll, out=zr);
+}
